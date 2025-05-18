@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+spring:
+  redis:
+    host: localhost
+    port: 6379
+
+  cloud:
+    gateway:
+      routes:
+        - id: hello-route
+          uri: https://httpbin.org
+          predicates:
+            - Path=/hello
+          filters:
+            - SetPath=/anything/mock-hello
+            - name: UserClassification
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
