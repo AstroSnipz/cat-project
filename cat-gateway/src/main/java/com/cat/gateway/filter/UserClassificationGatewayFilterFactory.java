@@ -6,7 +6,6 @@ import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -26,17 +25,16 @@ public class UserClassificationGatewayFilterFactory extends AbstractGatewayFilte
     @Override
     public GatewayFilter apply(Object config) {
         return (exchange, chain) -> {
-            String userId = exchange.getRequest().getHeaders().getFirst("X-User-Id");
-            if (userId == null || userId.isEmpty()) {
-                userId = exchange.getRequest().getQueryParams().getFirst("userId");
-            }
+            String userIdHeader = exchange.getRequest().getHeaders().getFirst("X-User-Id");
+            String userIdQuery = exchange.getRequest().getQueryParams().getFirst("userId");
+            final String userId = (userIdHeader != null && !userIdHeader.isEmpty()) ? userIdHeader : userIdQuery;
 
             if (userId == null || userId.isEmpty()) {
                 exchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
                 return exchange.getResponse().setComplete();
             }
 
-            String key = "classify:" + userId;
+            final String key = "classify:" + userId;
 
             return redisTemplate.opsForValue().get(key)
                     .switchIfEmpty(
@@ -51,10 +49,14 @@ public class UserClassificationGatewayFilterFactory extends AbstractGatewayFilte
                                     )
                     )
                     .flatMap(classification -> {
+                        // Debug print
+                        System.out.println("Classification for user " + userId + ": " + classification);
+
                         if ("bot".equalsIgnoreCase(classification)) {
                             exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
                             return exchange.getResponse().setComplete();
                         }
+
                         return chain.filter(exchange);
                     });
         };
