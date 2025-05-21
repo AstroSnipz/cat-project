@@ -18,6 +18,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
+
+        <!-- In pom.xml -->
+        <dependency>
+            <groupId>com.microsoft.onnxruntime</groupId>
+            <artifactId>onnxruntime</artifactId>
+            <version>1.17.0</version> <!-- or latest available -->
+        </dependency>
+
+
     </dependencies>
 
     <build>
